@@ -34,10 +34,12 @@ CREATE FUNCTION populate_with_fake_data(numberOfPeople integer,
     n_people integer;
     n_children_with_visits integer;
     days_since_start_removal_episode integer;
-    days_since_end_removal_episode integer;
-    length_of_removal_episode integer;
+    days_to_end_removal_episode integer;
+    length_of_removal_episode_till_date integer;
     start_date_removal_episode date;
     end_date_removal_episode date;
+    anchor_date date;
+    days_to_anchor_date integer;
 
   BEGIN
        n_people := 0;
@@ -76,15 +78,16 @@ CREATE FUNCTION populate_with_fake_data(numberOfPeople integer,
                                 day_of_birth, race)
                 values (person_id, gender, year_of_birth, month_of_birth,
                                 day_of_birth, race);
-                 randomValue := random();
+         randomValue := random();
+         anchor_date := to_date('2013-09-30', 'YYYY-MM-DD');
          IF (randomValue <= probability) THEN
            /*This child is being sampled as a child in placement 
              and one who had a visit with a caseworker. For removal 
              episode, choose the start date as a date between the date
              of birth of the child and today. Choose the end date as a
-             date between the start date and today. Choose the date of 
-             last visit as a date in the period in which the 
-             child was in a placement.*/
+             date between the start date and the anchor_date. Choose the date of 
+             last visit as a date between the start date of the removal 
+             episode and today.*/
            randomValue := random();
            
            days_since_start_removal_episode := 
@@ -92,20 +95,22 @@ CREATE FUNCTION populate_with_fake_data(numberOfPeople integer,
            start_date_removal_episode := current_date 
               - days_since_start_removal_episode;
            randomValue := random();
-           days_since_end_removal_episode := 
-             floor(randomValue*days_since_start_removal_episode);
-            end_date_removal_episode := current_date 
-              - days_since_end_removal_episode;
+           --The end date can be in past or in future
+           days_to_anchor_date := anchor_date - start_date_removal_episode;
+           days_to_end_removal_episode := 
+             floor(randomValue*days_to_anchor_date);
+            end_date_removal_episode := start_date_removal_episode +  
+              days_to_end_removal_episode;
 
            insert into fct_removal_episodes (child_id, start_date,
                                              end_date, type)
                       values (person_id, start_date_removal_episode,
                               end_date_removal_episode, 'PhysicalLocation::Placement');
-           length_of_removal_episode := end_date_removal_episode 
+           length_of_removal_episode_till_date := current_date 
               - start_date_removal_episode + 1;
            randomValue := random();
            date_last_visit := start_date_removal_episode + 
-              cast(floor(randomValue*length_of_removal_episode) as integer);
+              cast(floor(randomValue*length_of_removal_episode_till_date) as integer);
            days_since_last_visit := current_date - date_last_visit;
            year_last_visit :=  date_part('year', date_last_visit);
            month_last_visit :=  date_part('month', date_last_visit);
