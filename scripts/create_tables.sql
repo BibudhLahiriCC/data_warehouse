@@ -7,6 +7,15 @@ create table fct_visits
   days_since_last_visit integer 
 );
 
+CREATE TABLE fct_removal_episodes
+(
+  removal_episode_id serial NOT NULL,
+  child_id integer,
+  start_date date,
+  end_date date,
+  type character varying(50),
+  CONSTRAINT removal_episodes_pkey PRIMARY KEY (removal_episode_id )
+);
 
 create table dim_people
 (
